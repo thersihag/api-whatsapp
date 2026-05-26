@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RP Digital Tribe - WA Gateway Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .log-container { scrollbar-width: thin; }
+        .log-container::-webkit-scrollbar { width: 5px; }
+        .log-container::-webkit-scrollbar-thumb { background-color: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Gatekeeper Session Prompt Overlay -->
+    <div id="gatekeeper" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 transform transition-all duration-300 scale-100">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center bg-purple-100 text-purple-700 w-16 h-16 rounded-2xl mb-4 shadow-sm">
+                    <i class="fas fa-shield-alt text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Initialize Workspace</h2>
+                <p class="text-slate-500 text-sm mt-1">Enter your secure instance ID assigned by RP Digital Tribe.</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Instance / Session ID</label>
+                    <div class="relative">
+                        <i class="fas fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="gatekeeperInput" placeholder="e.g., campaign_node_10" 
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition">
+                    </div>
+                </div>
+                <button onclick="submitGatekeeper()" 
+                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3.5 rounded-xl shadow-md shadow-purple-600/10 transition flex items-center justify-center gap-2">
+                    Access Console Manager <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Layout (Hidden initially by gatekeeper) -->
+    <div id="appWorkspace" class="hidden flex-1 flex flex-col">
+        
+        <!-- Enterprise Header -->
+        <header class="bg-white border-b border-slate-200/80 sticky top-0 z-50 px-6 py-4 shadow-sm">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <!-- Branding Context -->
+                <div class="flex items-center gap-3">
+                    <div class="bg-purple-600 text-white p-2.5 rounded-xl shadow-md shadow-purple-600/20">
+                        <span class="font-black tracking-tighter text-xl px-1">RP</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg font-bold text-slate-900 tracking-tight">RP DIGITAL TRIBE</h1>
+                            <span class="text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded-md uppercase">Core Engine</span>
+                        </div>
+                        <p class="text-xs text-slate-500 font-medium">Automated Enterprise Messaging Service</p>
+                    </div>
+                </div>
+
+                <!-- Live Environment Status Indicators -->
+                <div class="flex items-center gap-4 w-full sm:w-auto justify-end">
+                    <div id="topStatus" class="text-xs font-semibold px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+                        <!-- Instanced dynamics injected here -->
+                    </div>
+                    <button onclick="triggerLogout()" 
+                        class="text-xs font-bold text-slate-600 hover:text-red-600 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-100 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fas fa-sign-out-alt"></i> Switch Instance
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Dashboard Grid -->
+        <main class="max-w-7xl mx-auto w-full px-6 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: QR Auth Node & Broadcast Form -->
+            <div class="lg:col-span-7 space-y-8">
+                
+                <!-- QR Code Channel Verification Card -->
+                <div id="qrPanel" class="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-sm relative overflow-hidden hidden">
+                    <div class="absolute top-4 left-4 bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200/60 px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Integration Disconnected
+                    </div>
+                    
+                    <div class="my-6">
+                        <div class="inline-flex p-4 bg-purple-50 text-purple-700 rounded-2xl mb-4">
+                            <i class="fas fa-qrcode text-4xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900">Link Device Terminal</h3>
+                        <p class="text-slate-500 text-sm max-w-sm mx-auto mt-1">Scan this token image using linked device configurations inside your corporate mobile client application.</p>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-2xl inline-block border border-slate-200/60 shadow-inner">
+                        <img id="qrImage" class="w-56 h-56 rounded-xl" alt="Awaiting core initialization stream..." src="">
+                    </div>
+                    
+                    <p class="text-xs text-slate-400 mt-4">Session persistence token remains functional for up to 14 active runtime shifts.</p>
+                </div>
+
+                <!-- Professional Bulk Campaign Interface -->
+                <div id="bulkPanel" class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4 flex items-center gap-3">
+                        <div class="text-purple-600 bg-purple-50 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold shadow-sm">
+                            <i class="fas fa-paper-plane"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Campaign Dispatch Manager</h3>
+                            <p class="text-xs text-slate-500 font-medium">Broadcast transactional metrics or notification arrays</p>
+                        </div>
+                    </div>
+
+                    <form id="bulkForm" class="p-6 space-y-5" enctype="multipart/form-data">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Recipient Matrix (Comma or Line Separated)</label>
+                            <textarea id="numbers" rows="4" 
+                                class="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600/10 focus:border-purple-600 transition"
+                                placeholder="919876543210&#10;918765432109"></textarea>
+                            <span class="text-[11px] text-slate-400 font-medium mt-1.5 block"><i class="fas fa-info-circle text-purple-600/60 mr-1"></i> Ensure international dial-code format prefixes (e.g., '91' for India) are preserved.</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Template String Content Body</label>
+                            <textarea id="message" rows="4" 
+                                class="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600/10 focus:border-purple-600 transition"
+                                placeholder="Configure transaction text parameters... Spacing and paragraph rules apply."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Promotional Graphic Attachment</label>
+                            <div class="border border-dashed border-slate-200 rounded-xl bg-slate-50/50 p-4 transition hover:bg-slate-50">
+                                <input type="file" id="media" accept="image/*" 
+                                    class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="sendBtn"
+                            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl shadow-md shadow-purple-600/10 transition flex items-center justify-center gap-2 tracking-wide">
+                            <i class="fas fa-play text-xs"></i> EXECUTE MASS BROADCAST
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Right Panel: Activity Monitors & Diagnostics Node -->
+            <div class="lg:col-span-5 space-y-8">
+                
+                <!-- System Activity Audit Logs Panel -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm h-[540px] flex flex-col overflow-hidden">
+                    <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4 flex justify-between items-center">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fas fa-chart-line text-purple-600"></i>
+                            <h3 class="text-sm font-bold text-slate-900">Audit Stream Analyzer</h3>
+                        </div>
+                        <span id="sendingStatus" class="hidden px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-100 text-[10px] font-extrabold rounded-md animate-pulse">
+                            BROADCAST RUNNING
+                        </span>
+                    </div>
+                    
+                    <div id="logs" class="flex-1 p-5 overflow-y-auto text-xs font-medium log-container bg-slate-50/30 space-y-2.5">
+                        <!-- Real-time traces mapping -->
+                    </div>
+                </div>
+
+                <!-- Single Sandbox Test Panel -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fas fa-flask text-purple-600"></i> Sandbox Node Diagnostics
+                    </h3>
+                    <div class="space-y-3">
+                        <input type="text" id="quickNumber" placeholder="Destination Mobile Index (e.g. 919876543210)" 
+                            class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-600/10 focus:border-purple-600 transition">
+                        <textarea id="quickText" placeholder="Isolated test string payload..." rows="2"
+                            class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-600/10 focus:border-purple-600 transition"></textarea>
+                        <button onclick="sendQuickMessage()" 
+                            class="w-full bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold py-2.5 rounded-xl transition border border-slate-200">
+                            Dispatch Test Sequence
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Corporate Enterprise Toast Notifications Module -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-white border border-slate-200 rounded-2xl px-5 py-3.5 shadow-xl z-[150] flex items-center gap-3 border-l-4">
+        <div id="toastIcon" class="text-sm"></div>
+        <span id="toastMessage" class="text-xs font-bold text-slate-700 tracking-tight"></span>
+    </div>
+
+    <script>
+        let isSending = false;
+        let activeSession = '';
+        let statusInterval = null;
+        let logsInterval = null;
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = msg;
+            
+            if (type === 'error') {
+                toast.className = "fixed bottom-6 right-6 bg-white border border-slate-200 rounded-2xl px-5 py-3.5 shadow-xl z-[150] flex items-center gap-3 border-l-4 border-l-red-500 animate-fade-in";
+                toastIcon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+            } else if (type === 'warning') {
+                toast.className = "fixed bottom-6 right-6 bg-white border border-slate-200 rounded-2xl px-5 py-3.5 shadow-xl z-[150] flex items-center gap-3 border-l-4 border-l-amber-500 animate-fade-in";
+                toastIcon.innerHTML = '<i class="fas fa-exclamation-triangle text-amber-500"></i>';
+            } else {
+                toast.className = "fixed bottom-6 right-6 bg-white border border-slate-200 rounded-2xl px-5 py-3.5 shadow-xl z-[150] flex items-center gap-3 border-l-4 border-l-purple-600 animate-fade-in";
+                toastIcon.innerHTML = '<i class="fas fa-check-circle text-purple-600"></i>';
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 4000);
+        }
+
+        function submitGatekeeper() {
+            const val = document.getElementById('gatekeeperInput').value.trim();
+            if (!val) return showToast("Assigned instance identification path required.", "warning");
+
+            activeSession = val.toLowerCase();
+            localStorage.setItem('rp_digital_tribe_session', activeSession);
+            
+            document.getElementById('gatekeeper').classList.add('hidden');
+            document.getElementById('appWorkspace').classList.remove('hidden');
+            
+            showToast(`Console established for token reference: [${activeSession}]`, 'success');
+            
+            initializeDashboardLoop();
+        }
+
+        function checkGatekeeperState() {
+            const cachedSession = localStorage.getItem('rp_digital_tribe_session');
+            if (cachedSession) {
+                activeSession = cachedSession;
+                document.getElementById('gatekeeper').classList.add('hidden');
+                document.getElementById('appWorkspace').classList.remove('hidden');
+                initializeDashboardLoop();
+            }
+        }
+
+        function triggerLogout() {
+            localStorage.removeItem('rp_digital_tribe_session');
+            activeSession = '';
+            
+            if (statusInterval) clearInterval(statusInterval);
+            if (logsInterval) clearInterval(logsInterval);
+
+            document.getElementById('appWorkspace').classList.add('hidden');
+            document.getElementById('gatekeeperInput').value = '';
+            document.getElementById('gatekeeper').classList.remove('hidden');
+            showToast("Instance session coordinates revoked.", "info");
+        }
+
+        async function checkStatus() {
+            if (!activeSession) return;
+            try {
+                const res = await fetch(`/api/status/${activeSession}`);
+                const data = await res.json();
+                const statusEl = document.getElementById('topStatus');
+                const qrImage = document.getElementById('qrImage');
+                const qrPanel = document.getElementById('qrPanel');
+
+                if (data.status === 'CONNECTED') {
+                    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span> <span class="text-slate-700">Node ID: <b class="font-bold text-purple-700">${activeSession}</b> (+${data.number})</span>`;
+                    qrPanel.classList.add('hidden');
+                } else {
+                    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50 animate-pulse"></span> <span class="text-slate-500">Awaiting Auth Scans [${activeSession}]</span>`;
+                    qrPanel.classList.remove('hidden');
+                    if (data.qr) {
+                        qrImage.src = data.qr;
+                    } else {
+                        qrImage.removeAttribute('src');
+                        qrImage.alt = "Generating cryptographic pipeline matrix tokens...";
+                    }
+                }
+            } catch (e) {
+                console.error("Endpoint network exception:", e);
+            }
+        }
+
+        async function checkLogs() {
+            if (!activeSession) return;
+            try {
+                const res = await fetch(`/api/logs/${activeSession}`);
+                const data = await res.json();
+                const logsDiv = document.getElementById('logs');
+                
+                if (data.logs.length === 0) {
+                    logsDiv.innerHTML = `<div class="text-slate-400 italic text-center py-4 font-normal">Diagnostic log registry is currently empty.</div>`;
+                } else {
+                    logsDiv.innerHTML = data.logs.map(log => {
+                        let badgeClass = 'text-slate-500 bg-slate-100 border-slate-200';
+                        if (log.type === 'success') badgeClass = 'text-emerald-700 bg-emerald-50 border-emerald-100 font-semibold';
+                        if (log.type === 'error') badgeClass = 'text-red-700 bg-red-50 border-red-100 font-semibold';
+                        if (log.type === 'warning') badgeClass = 'text-amber-700 bg-amber-50 border-amber-100';
+                        
+                        return `<div class="p-2.5 rounded-xl bg-white border border-slate-100 shadow-2xs flex gap-2 items-start">
+                            <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100 shrink-0 font-mono">${log.time}</span>
+                            <span class="text-slate-600 font-medium">${log.message}</span>
+                        </div>`;
+                    }).join('');
+                }
+
+                logsDiv.scrollTop = logsDiv.scrollHeight;
+                isSending = data.isSending;
+                document.getElementById('sendingStatus').classList.toggle('hidden', !isSending);
+            } catch (e) {
+                console.error("Audit log exceptions:", e);
+            }
+        }
+
+        document.getElementById('bulkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isSending) return showToast("Active runtime queue process operating. Standby.", "warning");
+
+            const numbers = document.getElementById('numbers').value.trim();
+            const message = document.getElementById('message').value.trim();
+            if (!numbers || !message) return showToast("Required data targets missing inside form matrix.", "warning");
+
+            const formData = new FormData();
+            formData.append('session', activeSession);
+            formData.append('numbers', numbers);
+            formData.append('message', message);
+            
+            const mediaFile = document.getElementById('media').files[0];
+            if (mediaFile) formData.append('media', mediaFile);
+
+            try {
+                const res = await fetch('/api/send-bulk', { method: 'POST', body: formData });
+                const result = await res.json();
+                if (res.ok) {
+                    showToast(result.message || "Bulk broadcast engine sequence launched.", "success");
+                } else {
+                    showToast(result.error || "Broadcast worker failed", "error");
+                }
+            } catch (err) {
+                showToast("Server parsing queue fault.", "error");
+            }
+        });
+
+        async function sendQuickMessage() {
+            const number = document.getElementById('quickNumber').value.trim();
+            const text = document.getElementById('quickText').value.trim();
+            if (!number || !text) return showToast("Test parameters require parameters defined.", "warning");
+
+            try {
+                const res = await fetch(`/api/send?session=${activeSession}&number=${encodeURIComponent(number)}&text=${encodeURIComponent(text)}`);
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast("Test matrix dispatch successful.", "success");
+                    document.getElementById('quickText').value = '';
+                } else {
+                    showToast(data.error || "Sandbox rejected sequence.", "error");
+                }
+            } catch (err) {
+                showToast("Diagnostic transaction pipeline timeout.", "error");
+            }
+        }
+
+        function initializeDashboardLoop() {
+            checkStatus();
+            checkLogs();
+            statusInterval = setInterval(checkStatus, 3000);
+            logsInterval = setInterval(checkLogs, 2500);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkGatekeeperState();
+        });
+    </script>
+</body>
+</html>
